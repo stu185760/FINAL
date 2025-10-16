@@ -1,73 +1,75 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useCurrentUser, refreshCurrentUser } from "@/hooks/use-local"
-import { switchRole } from "@/lib/local-db"
-import { cn } from "@/lib/utils"
-
-const nav = [
-  { href: "/", label: "Home" },
-  { href: "/ads", label: "Browse Ads" },
-  { href: "/vendor/browse", label: "Vendor Browse" },
-  { href: "/classifieds", label: "Classifieds" },
-  { href: "/post-ad", label: "Post Ad" },
-  { href: "/classifieds/post", label: "Post Classified" },
-]
+import { useState } from "react"
+import { Menu, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function SiteHeader() {
-  const pathname = usePathname()
-  const { data: user } = useCurrentUser()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "Products", href: "/products" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" },
+  ]
 
   return (
-    <header className="border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-50">
-      <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-semibold text-lg">
+    <header className="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-lg shadow-md z-50">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+        <Link href="/" className="text-xl font-bold tracking-tight">
           EasyCustomized
         </Link>
-        <nav className="flex items-center gap-2">
-          {nav.map((n) => (
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex gap-6 text-sm font-medium">
+          {navItems.map((item) => (
             <Link
-              key={n.href}
-              href={n.href}
-              className={cn(
-                "px-3 py-2 rounded-md text-sm hover:bg-muted",
-                pathname === n.href && "bg-muted font-medium",
-              )}
+              key={item.href}
+              href={item.href}
+              className="hover:text-blue-600 transition-colors"
             >
-              {n.label}
+              {item.name}
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <Select
-            value={user?.role ?? "customer"}
-            onValueChange={(val: "customer" | "vendor" | "admin") => {
-              switchRole(val)
-              refreshCurrentUser()
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="customer">Customer</SelectItem>
-              <SelectItem value="vendor">Vendor</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-          <Link href="/messages">
-            <Button variant="outline" size="sm">
-              Messages
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button size="sm">Login</Button>
-          </Link>
-        </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden text-gray-800"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          {menuOpen ? <X size={26} /> : <Menu size={26} />}
+        </button>
       </div>
+
+      {/* Mobile Dropdown Menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.nav
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden bg-white shadow-lg"
+          >
+            <div className="px-4 py-3 flex flex-col space-y-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block text-gray-700 hover:text-blue-600 transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   )
 }
