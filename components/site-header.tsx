@@ -2,72 +2,92 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Menu, X } from "lucide-react"
 
 export function SiteHeader() {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const navItems = [
     { name: "Home", href: "/" },
-    { name: "Products", href: "/products" },
-    { name: "About", href: "/about" },
-    { name: "Contact", href: "/contact" },
+    { name: "Browse Ads", href: "/browse-ads" },
+    { name: "Vendor Browse", href: "/vendor-browse" },
+    { name: "Classifieds", href: "/classifieds" },
+    { name: "Post Ad", href: "/post-ad" },
+    { name: "Post Classified", href: "/post-classified" }
+  ]
+
+  const rightMenu = [
+    { name: "Customer", href: "/customer" },
+    { name: "Messages", href: "/messages" },
+    { name: "Login", href: "/login" }
   ]
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white/70 backdrop-blur-lg shadow-md z-50">
-      <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="text-xl font-bold tracking-tight">
+    <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo */}
+        <Link href="/" className="text-xl font-bold tracking-tight text-gray-900">
           EasyCustomized
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-6 text-sm font-medium">
+        {/* Desktop Menu */}
+        <nav className="hidden md:flex space-x-6">
           {navItems.map((item) => (
             <Link
-              key={item.href}
+              key={item.name}
               href={item.href}
-              className="hover:text-blue-600 transition-colors"
+              className="text-gray-700 hover:text-black transition-colors"
             >
               {item.name}
             </Link>
           ))}
         </nav>
 
-        {/* Mobile Menu Button */}
+        {/* Right Menu (Desktop) */}
+        <nav className="hidden md:flex space-x-4 items-center">
+          {rightMenu.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="text-gray-700 hover:text-black transition-colors"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Mobile Button */}
         <button
-          className="md:hidden text-gray-800"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
+          className="md:hidden text-gray-700"
+          onClick={() => setMobileOpen(!mobileOpen)}
         >
-          {menuOpen ? <X size={26} /> : <Menu size={26} />}
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Menu */}
       <AnimatePresence>
-        {menuOpen && (
-          <motion.nav
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden bg-white shadow-lg"
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-white border-t shadow-inner"
           >
-            <div className="px-4 py-3 flex flex-col space-y-3">
-              {navItems.map((item) => (
+            <div className="flex flex-col space-y-3 p-4">
+              {[...navItems, ...rightMenu].map((item) => (
                 <Link
-                  key={item.href}
+                  key={item.name}
                   href={item.href}
-                  className="block text-gray-700 hover:text-blue-600 transition-colors"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => setMobileOpen(false)}
+                  className="text-gray-700 hover:text-black transition-colors"
                 >
                   {item.name}
                 </Link>
               ))}
             </div>
-          </motion.nav>
+          </motion.div>
         )}
       </AnimatePresence>
     </header>
