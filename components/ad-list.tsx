@@ -16,15 +16,17 @@ export function AdList({ initialCategory }: { initialCategory?: string }) {
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-3">
-        <Input
-          placeholder="Search by keyword..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="md:max-w-sm"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <Input
+            placeholder="Search by keyword..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="w-full"
+          />
+        </div>
         <Select value={category} onValueChange={(v) => setCategory(v)}>
-          <SelectTrigger className="w-[220px]">
+          <SelectTrigger className="w-full sm:w-[220px]">
             <SelectValue placeholder="All categories" />
           </SelectTrigger>
           <SelectContent>
@@ -37,7 +39,7 @@ export function AdList({ initialCategory }: { initialCategory?: string }) {
           </SelectContent>
         </Select>
       </div>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {ads?.map((ad) => (
           <AdCard key={ad.id} ad={ad} />
         ))}
