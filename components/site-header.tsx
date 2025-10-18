@@ -1,14 +1,22 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useCurrentUser, refreshCurrentUser } from "@/hooks/use-local"
-import { switchRole } from "@/lib/local-db"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
-import { Menu, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Menu, X, LogOut } from "lucide-react"
+import Image from "next/image"
+
+const createClient = async () => {
+  try {
+    const { createClient: createSupabaseClient } = await import("@/lib/supabase/client")
+    return createSupabaseClient()
+  } catch (error) {
+    console.error("[v0] Failed to create Supabase client:", error)
+    return null
+  }
+}
 
 const nav = [
   { href: "/", label: "Home" },
@@ -21,14 +29,60 @@ const nav = [
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const { data: user } = useCurrentUser()
+  const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const supabase = await createClient()
+        if (!supabase) {
+          setIsLoading(false)
+          return
+        }
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        setUser(user)
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user || null)
+        })
+
+        return () => subscription?.unsubscribe()
+      } catch (error) {
+        console.error("[v0] Auth initialization error:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initAuth()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      const supabase = await createClient()
+      if (supabase) {
+        await supabase.auth.signOut()
+        router.push("/")
+      }
+    } catch (error) {
+      console.error("[v0] Logout error:", error)
+    }
+  }
 
   return (
     <header className="border-b bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-50">
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="font-semibold text-lg md:text-xl">
-          EasyCustomized
+        <Link href="/" className="flex items-center gap-2 font-semibold text-lg md:text-xl">
+          <Image src="/logo.png" alt="EasyCustomized Logo" width={40} height={40} className="w-8 h-8 md:w-10 md:h-10" />
+          <span className="hidden sm:inline">EasyCustomized</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-2">
@@ -47,30 +101,34 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <Select
-            value={user?.role ?? "customer"}
-            onValueChange={(val: "customer" | "vendor" | "admin") => {
-              switchRole(val)
-              refreshCurrentUser()
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="customer">Customer</SelectItem>
-              <SelectItem value="vendor">Vendor</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-          <Link href="/messages">
-            <Button variant="outline" size="sm">
-              Messages
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button size="sm">Login</Button>
-          </Link>
+          {!isLoading && (
+            <>
+              {user ? (
+                <>
+                  <Link href="/messages">
+                    <Button variant="outline" size="sm">
+                      Messages
+                    </Button>
+                  </Link>
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href="/auth/login">
+                    <Button variant="outline" size="sm">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link href="/auth/sign-up">
+                    <Button size="sm">Sign Up</Button>
+                  </Link>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         <button
@@ -98,35 +156,42 @@ export function SiteHeader() {
                 {n.label}
               </Link>
             ))}
+            {!isLoading && (
+              <>
+                {user ? (
+                  <>
+                    <Link href="/messages" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
+                        Messages
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLogout}
+                      className="w-full justify-start bg-transparent"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
+                        Login
+                      </Button>
+                    </Link>
+                    <Link href="/auth/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" className="w-full justify-start">
+                        Sign Up
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </nav>
-          <div className="border-t px-4 py-3 space-y-2">
-            <Select
-              value={user?.role ?? "customer"}
-              onValueChange={(val: "customer" | "vendor" | "admin") => {
-                switchRole(val)
-                refreshCurrentUser()
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="vendor">Vendor</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-              </SelectContent>
-            </Select>
-            <Link href="/messages" className="block">
-              <Button variant="outline" size="sm" className="w-full bg-transparent">
-                Messages
-              </Button>
-            </Link>
-            <Link href="/login" className="block">
-              <Button size="sm" className="w-full">
-                Login
-              </Button>
-            </Link>
-          </div>
         </div>
       )}
     </header>
