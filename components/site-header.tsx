@@ -82,7 +82,7 @@ export function SiteHeader() {
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg md:text-xl">
           <Image src="/logo.png" alt="EasyCustomized Logo" width={40} height={40} className="w-8 h-8 md:w-10 md:h-10" />
-          <span className="hidden sm:inline">EasyCustomized</span>
+          <span className="text-sm sm:text-base md:text-lg">EasyCustomized</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-2">
