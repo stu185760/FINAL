@@ -1,54 +1,73 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 
 export function Hero() {
   return (
-    <section className="bg-card">
-      <div className="mx-auto max-w-6xl px-4 py-8 md:py-12 lg:py-16 grid gap-6 md:gap-8 md:grid-cols-2 items-center">
-        <div className="space-y-4 md:space-y-6">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-balance">EasyCustomized</h1>
-          <p className="text-sm md:text-base text-muted-foreground text-pretty">{"Your idea, their craft."}</p>
-          <p className="text-xs sm:text-sm md:text-base text-muted-foreground/90">
-            The marketplace connecting custom product seekers with talented makers across every category.
+    <section className="bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <div className="mx-auto max-w-6xl px-4 py-8 md:py-16 lg:py-20 grid gap-8 md:gap-12 md:grid-cols-2 items-center">
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-balance leading-tight">
+              Your Idea, Their Craft
+            </h1>
+            <p className="text-lg md:text-xl text-slate-300 mt-4">
+              Connect with talented artisans and makers to bring your custom product vision to life.
+            </p>
+          </div>
+          <p className="text-sm md:text-base text-slate-400">
+            From jewelry and clothing to automobiles and furniture—find the perfect craftsperson for your unique
+            project.
           </p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 pt-2">
-            <Link href="/post-ad" className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto">Post an Ad</Button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4">
+            <Link
+              href="/post-ad"
+              className="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-lg"
+            >
+              Post Your Request
             </Link>
-            <Link href="/ads" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto bg-transparent">
-                Browse Requests
-              </Button>
+            <Link
+              href="/ads"
+              className="inline-block px-6 py-3 border border-white text-white hover:bg-white/10 rounded-lg"
+            >
+              Browse Makers
             </Link>
           </div>
         </div>
-        <div aria-hidden="true" className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          <div className="rounded-lg border bg-muted overflow-hidden aspect-[4/3]">
+        <div aria-hidden="true" className="grid grid-cols-2 gap-3 md:gap-4">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 overflow-hidden aspect-[4/3] shadow-lg hover:shadow-xl transition-shadow">
             <Image
-              src="/handcrafted-furniture-workshop.jpg"
-              alt="Handcrafted furniture workshop"
-              width={640}
-              height={480}
+              src="/jewelry-embroidery.avif"
+              alt="Ornate jewelry embroidery"
+              width={400}
+              height={300}
               className="h-full w-full object-cover"
               priority
             />
           </div>
-          <div className="rounded-lg border bg-muted overflow-hidden aspect-[4/3]">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 overflow-hidden aspect-[4/3] shadow-lg hover:shadow-xl transition-shadow">
             <Image
-              src="/artisan-jewelry-making.jpg"
-              alt="Artisan jewelry making"
-              width={640}
-              height={480}
+              src="/shoemaker-craft.jpg"
+              alt="Shoemaker craftsmanship"
+              width={400}
+              height={300}
               className="h-full w-full object-cover"
             />
           </div>
-          <div className="rounded-lg border bg-muted overflow-hidden aspect-[4/3] sm:col-span-2">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 overflow-hidden aspect-[4/3] shadow-lg hover:shadow-xl transition-shadow">
             <Image
-              src="/custom-automotive-upholstery.jpg"
-              alt="Custom automotive upholstery"
-              width={1280}
-              height={480}
+              src="/bridal-jewelry.jpg"
+              alt="Bridal jewelry design"
+              width={400}
+              height={300}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-slate-800 overflow-hidden aspect-[4/3] shadow-lg hover:shadow-xl transition-shadow">
+            <Image
+              src="/red-automobile.jpg"
+              alt="Custom automobile"
+              width={400}
+              height={300}
               className="h-full w-full object-cover"
             />
           </div>
