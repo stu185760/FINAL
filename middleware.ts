@@ -1,12 +1,8 @@
-// The middleware will be re-enabled after Supabase auth is properly configured
-// For now, allow all routes to be publicly accessible
-
+import { updateSession } from "@/lib/supabase/middleware"
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
 
-export function middleware(request: NextRequest) {
-  // Allow all requests to pass through
-  return NextResponse.next()
+export async function middleware(request: NextRequest) {
+  return await updateSession(request)
 }
 
 export const config = {

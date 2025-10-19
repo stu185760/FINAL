@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export function Hero() {
   return (
@@ -19,17 +20,19 @@ export function Hero() {
             project.
           </p>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-4">
-            <Link
-              href="/post-ad"
-              className="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-lg"
-            >
-              Post Your Request
+            <Link href="/post-ad" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-black font-semibold">
+                Post Your Request
+              </Button>
             </Link>
-            <Link
-              href="/ads"
-              className="inline-block px-6 py-3 border border-white text-white hover:bg-white/10 rounded-lg"
-            >
-              Browse Makers
+            <Link href="/ads" className="w-full sm:w-auto">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto border-white text-white hover:bg-white/10 bg-transparent"
+              >
+                Browse Makers
+              </Button>
             </Link>
           </div>
         </div>
