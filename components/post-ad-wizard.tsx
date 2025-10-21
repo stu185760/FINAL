@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAd, getCategories, getCurrentUser } from "@/lib/local-db"
-import { refreshAds } from "@/hooks/use-local"
+import { createAd } from "@/lib/supabase-db"
+import { getCategories, getCurrentUser } from "@/lib/local-db"
+import { useAds } from "@/hooks/use-supabase-ads"
 import ImageUpload from "@/components/image-upload"
 import LocationSelect from "@/components/location-select"
 
@@ -19,6 +20,7 @@ export function PostAdWizard() {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
   const categories = getCategories()
+  const { mutate: refreshAds } = useAds()
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -180,21 +182,27 @@ export function PostAdWizard() {
                 Back
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   try {
                     const pf = priceFrom.trim() ? Number(priceFrom) : undefined
                     const pt = priceTo.trim() ? Number(priceTo) : undefined
-                    const ad = createAd({
+                    const adData = await createAd({
+                      category: category!,
                       title,
                       description,
-                      category: category!,
-                      images,
                       location,
                       price_from: isNaN(pf as any) ? undefined : pf,
                       price_to: isNaN(pt as any) ? undefined : pt,
+                      images,
                     })
                     refreshAds()
-                    router.push(`/ads/${ad.id}`)
+                    // The createAd function returns an array, so we need to get the first item
+                    if (adData && adData.length > 0) {
+                      router.push(`/ads/${adData[0].id}`)
+                    } else {
+                      // If no data returned, we'll need to handle this differently
+                      router.push('/ads')
+                    }
                   } catch (e: any) {
                     alert(e?.message ?? "Failed to publish")
                   }

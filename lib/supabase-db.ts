@@ -1,5 +1,27 @@
 import { createClient as createBrowserClient } from "@/lib/supabase/client"
 
+// Map category slugs to database category names
+const categorySlugToName: Record<string, string> = {
+  'clothing': 'Clothing',
+  'footwear': 'Footwear', 
+  'furniture': 'Furniture',
+  'automobile': 'Automobile',
+  'jewelry': 'Jewelry',
+  'gifting': 'Gifting',
+  'others': 'Others'
+}
+
+// Map database category names back to slugs
+const categoryNameToSlug: Record<string, string> = {
+  'Clothing': 'clothing',
+  'Footwear': 'footwear',
+  'Furniture': 'furniture', 
+  'Automobile': 'automobile',
+  'Jewelry': 'jewelry',
+  'Gifting': 'gifting',
+  'Others': 'others'
+}
+
 export type Ad = {
   id: string
   user_id: string
@@ -29,7 +51,7 @@ export type Classified = {
 }
 
 // Browser client functions
-export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at">) {
+export async function createAd(ad: Omit<Ad, "id" | "user_id" | "created_at" | "updated_at">) {
   const supabase = createBrowserClient()
   const {
     data: { user },
@@ -37,10 +59,14 @@ export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at">)
 
   if (!user) throw new Error("Not authenticated")
 
+  // Convert category slug to proper database category name
+  const categoryName = categorySlugToName[ad.category] || ad.category
+
   const { data, error } = await supabase.from("ads").insert({
     ...ad,
+    category: categoryName,
     user_id: user.id,
-  })
+  }).select()
 
   if (error) throw error
   return data
@@ -51,7 +77,9 @@ export async function listAds(filters?: { category?: string; location?: string; 
   let query = supabase.from("ads").select("*")
 
   if (filters?.category && filters.category !== "All") {
-    query = query.eq("category", filters.category)
+    // Convert category slug to database category name for filtering
+    const categoryName = categorySlugToName[filters.category] || filters.category
+    query = query.eq("category", categoryName)
   }
 
   if (filters?.location && filters.location !== "All locations") {
@@ -61,7 +89,12 @@ export async function listAds(filters?: { category?: string; location?: string; 
   const { data, error } = await query.order("created_at", { ascending: false })
 
   if (error) throw error
-  return data || []
+  
+  // Convert category names back to slugs for frontend consistency
+  return (data || []).map(ad => ({
+    ...ad,
+    category: categoryNameToSlug[ad.category] || ad.category
+  }))
 }
 
 export async function getAd(id: string) {
@@ -69,7 +102,12 @@ export async function getAd(id: string) {
   const { data, error } = await supabase.from("ads").select("*").eq("id", id).single()
 
   if (error) throw error
-  return data
+  
+  // Convert category name back to slug for frontend consistency
+  return {
+    ...data,
+    category: categoryNameToSlug[data.category] || data.category
+  }
 }
 
 export async function deleteAd(id: string) {
