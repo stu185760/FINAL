@@ -29,7 +29,7 @@ export type Classified = {
 }
 
 // Browser client functions
-export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at">) {
+export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at" | "user_id">) {
   const supabase = createBrowserClient()
   const {
     data: { user },
@@ -40,7 +40,7 @@ export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at">)
   const { data, error } = await supabase.from("ads").insert({
     ...ad,
     user_id: user.id,
-  })
+  }).select().single()
 
   if (error) throw error
   return data
