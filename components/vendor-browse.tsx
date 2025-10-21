@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { getCategories, listAds } from "@/lib/local-db"
+import { useState } from "react"
+import { getCategories } from "@/lib/local-db"
+import { useAds } from "@/hooks/use-supabase-ads"
 import LocationSelect from "@/components/location-select"
 import { AdCard } from "@/components/ad-card"
 
@@ -12,7 +13,10 @@ export default function VendorBrowse() {
   const [sort, setSort] = useState<"newest" | "budget-asc" | "budget-desc">("newest")
   const [location, setLocation] = useState<string>("all")
 
-  const items = useMemo(() => listAds({ q, category, sort, location }), [q, category, sort, location])
+  const { ads: items, isLoading } = useAds({ 
+    category: category === "all" ? undefined : category, 
+    location: location === "all" ? undefined : location 
+  })
 
   return (
     <main className="container mx-auto max-w-5xl p-6">
@@ -63,14 +67,27 @@ export default function VendorBrowse() {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map((ad) => (
-          <AdCard key={ad.id} ad={ad} />
-        ))}
-      </div>
+      {isLoading ? (
+        <p className="text-muted-foreground">Loading ads...</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items
+              .filter((ad) => {
+                if (!q) return true
+                const searchTerm = q.toLowerCase()
+                return ad.title.toLowerCase().includes(searchTerm) || 
+                       ad.description.toLowerCase().includes(searchTerm)
+              })
+              .map((ad) => (
+                <AdCard key={ad.id} ad={ad} />
+              ))}
+          </div>
 
-      {items.length === 0 && (
-        <p className="mt-6 text-sm text-muted-foreground">No results. Try adjusting your search or filters.</p>
+          {items.length === 0 && (
+            <p className="mt-6 text-sm text-muted-foreground">No results. Try adjusting your search or filters.</p>
+          )}
+        </>
       )}
     </main>
   )

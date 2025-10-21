@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAd, getCategories, getCurrentUser } from "@/lib/local-db"
-import { refreshAds } from "@/hooks/use-local"
+import { createAd } from "@/lib/supabase-db"
+import { getCurrentUser } from "@/lib/local-db"
+import { useAds } from "@/hooks/use-supabase-ads"
 import ImageUpload from "@/components/image-upload"
 import LocationSelect from "@/components/location-select"
 
@@ -18,7 +19,18 @@ type Step = 1 | 2 | 3 | 4
 export function PostAdWizard() {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
-  const categories = getCategories()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { mutate: refreshAds } = useAds()
+  
+  const categories = [
+    { id: "cat-1", name: "Clothing", slug: "clothing" },
+    { id: "cat-2", name: "Footwear", slug: "footwear" },
+    { id: "cat-3", name: "Furniture", slug: "furniture" },
+    { id: "cat-4", name: "Automobile", slug: "automobile" },
+    { id: "cat-5", name: "Jewelry", slug: "jewelry" },
+    { id: "cat-6", name: "Gifting", slug: "gifting" },
+    { id: "cat-7", name: "Others", slug: "others" },
+  ]
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -180,11 +192,12 @@ export function PostAdWizard() {
                 Back
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   try {
+                    setIsSubmitting(true)
                     const pf = priceFrom.trim() ? Number(priceFrom) : undefined
                     const pt = priceTo.trim() ? Number(priceTo) : undefined
-                    const ad = createAd({
+                    const ad = await createAd({
                       title,
                       description,
                       category: category!,
@@ -194,13 +207,16 @@ export function PostAdWizard() {
                       price_to: isNaN(pt as any) ? undefined : pt,
                     })
                     refreshAds()
-                    router.push(`/ads/${ad.id}`)
+                    router.push(`/ads/${ad[0].id}`)
                   } catch (e: any) {
                     alert(e?.message ?? "Failed to publish")
+                  } finally {
+                    setIsSubmitting(false)
                   }
                 }}
+                disabled={isSubmitting}
               >
-                Publish
+                {isSubmitting ? "Publishing..." : "Publish"}
               </Button>
             </div>
           </div>

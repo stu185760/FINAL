@@ -6,14 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { getAd, getCategories, getUser, getCurrentUser, respondToAd, flagItem, deleteAd } from "@/lib/local-db"
+import { getAd, deleteAd } from "@/lib/supabase-db"
+import { getCategories, getUser, getCurrentUser, respondToAd, flagItem } from "@/lib/local-db"
 import { useCurrentUser } from "@/hooks/use-local"
+import { useSWR } from "swr"
 import { formatDateTime } from "@/lib/utils"
 
 export function AdDetail({ adId }: { adId: string }) {
-  const ad = useMemo(() => getAd(adId), [adId])
+  const { data: ad, error, isLoading } = useSWR(`ad-${adId}`, () => getAd(adId))
   const cat = ad ? getCategories().find((c) => c.slug === ad.category) : undefined
-  const owner = ad?.owner_id ? getUser(ad.owner_id) : undefined
+  const owner = ad?.user_id ? getUser(ad.user_id) : undefined
   const { data: user } = useCurrentUser()
   const router = useRouter()
   const [message, setMessage] = useState("Hi! I can help with this. Here’s a brief proposal...")
@@ -99,21 +101,25 @@ export function AdDetail({ adId }: { adId: string }) {
               Flag
             </Button>
           )}
-          {(user?.id === ad.owner_id || user?.role === "admin") && (
+          {(user?.id === ad.user_id || user?.role === "admin") && (
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (!confirm("Are you sure you want to delete this ad? This cannot be undone.")) return
-                const ok = deleteAd(ad.id)
-                if (ok) {
+                try {
+                  setIsDeleting(true)
+                  await deleteAd(ad.id)
                   alert("Ad deleted.")
                   router.push("/ads")
-                } else {
+                } catch (error: any) {
                   alert("Failed to delete the ad.")
+                } finally {
+                  setIsDeleting(false)
                 }
               }}
+              disabled={isDeleting}
             >
-              Delete ad
+              {isDeleting ? "Deleting..." : "Delete ad"}
             </Button>
           )}
         </CardContent>
