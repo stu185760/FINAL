@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAd, getCategories, getCurrentUser } from "@/lib/local-db"
+import { createAd as createAdLocal, getCategories, getCurrentUser } from "@/lib/local-db"
+import { createAd as createAdDb } from "@/lib/supabase-db"
 import { refreshAds } from "@/hooks/use-local"
 import ImageUpload from "@/components/image-upload"
 import LocationSelect from "@/components/location-select"
@@ -28,6 +29,20 @@ export function PostAdWizard() {
   const [priceTo, setPriceTo] = useState<string>("")
   const [uploads, setUploads] = useState<string[]>([])
   const images = uploads.slice(0, 8)
+
+  // Map local slug values to DB-accepted category values
+  function mapCategoryToDbValue(slug: string): string {
+    const mapping: Record<string, string> = {
+      clothing: "Clothing",
+      footwear: "Footwear",
+      furniture: "Furniture",
+      automobile: "Automobile",
+      jewelry: "Jewelry",
+      gifting: "Gifting",
+      others: "Others",
+    }
+    return mapping[slug] ?? "Others"
+  }
 
   if (getCurrentUser()?.role !== "customer") {
     return (
@@ -180,19 +195,39 @@ export function PostAdWizard() {
                 Back
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   try {
                     const pf = priceFrom.trim() ? Number(priceFrom) : undefined
                     const pt = priceTo.trim() ? Number(priceTo) : undefined
-                    const ad = createAd({
+
+                    // 1) Create in Supabase DB (best effort)
+                    try {
+                      await createAdDb({
+                        title,
+                        description,
+                        category: mapCategoryToDbValue(category!),
+                        images,
+                        location,
+                        price_from: isNaN(pf as any) ? null : (pf as number),
+                        price_to: isNaN(pt as any) ? null : (pt as number),
+                      })
+                    } catch (dbErr: any) {
+                      // Surface a friendly message but still allow local flow to continue
+                      console.error("Supabase insert failed:", dbErr)
+                      alert(dbErr?.message ?? "Failed to publish to database. Please ensure you are logged in.")
+                    }
+
+                    // 2) Create locally so current UI flow keeps working
+                    const ad = createAdLocal({
                       title,
                       description,
                       category: category!,
                       images,
                       location,
-                      price_from: isNaN(pf as any) ? undefined : pf,
-                      price_to: isNaN(pt as any) ? undefined : pt,
+                      price_from: isNaN(pf as any) ? undefined : (pf as number),
+                      price_to: isNaN(pt as any) ? undefined : (pt as number),
                     })
+
                     refreshAds()
                     router.push(`/ads/${ad.id}`)
                   } catch (e: any) {
