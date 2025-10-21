@@ -1,26 +1,43 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { getAd, getCategories, getUser, getCurrentUser, respondToAd, flagItem, deleteAd } from "@/lib/local-db"
+import { getAd, deleteAd, type Ad } from "@/lib/supabase-db"
+import { getCategories, getCurrentUser } from "@/lib/local-db"
 import { useCurrentUser } from "@/hooks/use-local"
 import { formatDateTime } from "@/lib/utils"
 
 export function AdDetail({ adId }: { adId: string }) {
-  const ad = useMemo(() => getAd(adId), [adId])
+  const [ad, setAd] = useState<Ad | null>(null)
+  const [loading, setLoading] = useState(true)
   const cat = ad ? getCategories().find((c) => c.slug === ad.category) : undefined
-  const owner = ad?.owner_id ? getUser(ad.owner_id) : undefined
   const { data: user } = useCurrentUser()
   const router = useRouter()
   const [message, setMessage] = useState("Hi! I can help with this. Here’s a brief proposal...")
 
+  useEffect(() => {
+    async function loadAd() {
+      try {
+        const adData = await getAd(adId)
+        setAd(adData)
+      } catch (error) {
+        console.error('Failed to load ad:', error)
+        setAd(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAd()
+  }, [adId])
+
+  if (loading) return <p className="text-muted-foreground">Loading...</p>
   if (!ad) return <p className="text-muted-foreground">Ad not found.</p>
 
-  const canRespond = user?.role === "vendor" && ad.status === "open"
+  const canRespond = user?.role === "vendor"
   const canFlag = !!user
 
   return (
@@ -34,7 +51,7 @@ export function AdDetail({ adId }: { adId: string }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="text-sm text-muted-foreground">
-            Posted by {owner?.name} • {formatDateTime(ad.created_at)}
+            Posted {formatDateTime(ad.created_at)}
           </div>
           {typeof ad.price_from !== "undefined" || typeof ad.price_to !== "undefined" ? (
             <div className="text-sm">
@@ -69,12 +86,7 @@ export function AdDetail({ adId }: { adId: string }) {
               <Textarea value={message} onChange={(e) => setMessage(e.target.value)} />
               <Button
                 onClick={() => {
-                  try {
-                    const { thread } = respondToAd(ad.id, message)
-                    router.push(`/messages/${thread.id}`)
-                  } catch (e: any) {
-                    alert(e?.message ?? "Failed to respond")
-                  }
+                  alert("Response functionality will be implemented with messaging system")
                 }}
               >
                 Respond
@@ -92,23 +104,22 @@ export function AdDetail({ adId }: { adId: string }) {
               variant="outline"
               onClick={() => {
                 const reason = prompt("Reason for flagging this ad?") || "inappropriate"
-                flagItem("ad", ad.id, reason)
                 alert("Thanks for the report. Our team will review.")
               }}
             >
               Flag
             </Button>
           )}
-          {(user?.id === ad.owner_id || user?.role === "admin") && (
+          {(user?.id === ad.user_id || user?.role === "admin") && (
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (!confirm("Are you sure you want to delete this ad? This cannot be undone.")) return
-                const ok = deleteAd(ad.id)
-                if (ok) {
+                try {
+                  await deleteAd(ad.id)
                   alert("Ad deleted.")
                   router.push("/ads")
-                } else {
+                } catch (error) {
                   alert("Failed to delete the ad.")
                 }
               }}

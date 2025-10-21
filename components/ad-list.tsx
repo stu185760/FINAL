@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAds } from "@/hooks/use-local"
+import { useAds } from "@/hooks/use-supabase-ads"
 import { getCategories } from "@/lib/local-db"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,7 +11,7 @@ export function AdList({ initialCategory }: { initialCategory?: string }) {
   const [q, setQ] = useState("")
   const [category, setCategory] = useState<string>(initialCategory ?? "all")
   const effectiveCategory = category === "all" ? undefined : category
-  const { data: ads } = useAds({ q, category: effectiveCategory })
+  const { ads } = useAds({ category: effectiveCategory })
   const categories = getCategories()
 
   return (
