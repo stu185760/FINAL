@@ -1,7 +1,7 @@
 import useSWR from "swr"
 import { listAds, type Ad } from "@/lib/supabase-db"
 
-export function useAds(filters?: { category?: string; location?: string; sort?: string }) {
+export function useAds(filters?: { category?: string; location?: string; sort?: string; q?: string }) {
   const { data, error, isLoading, mutate } = useSWR(
     ["ads", filters],
     async () => {

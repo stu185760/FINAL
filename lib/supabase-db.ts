@@ -46,7 +46,7 @@ export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at">)
   return data
 }
 
-export async function listAds(filters?: { category?: string; location?: string; sort?: string }) {
+export async function listAds(filters?: { category?: string; location?: string; sort?: string; q?: string }) {
   const supabase = createBrowserClient()
   let query = supabase.from("ads").select("*")
 
@@ -56,6 +56,10 @@ export async function listAds(filters?: { category?: string; location?: string; 
 
   if (filters?.location && filters.location !== "All locations") {
     query = query.eq("location", filters.location)
+  }
+
+  if (filters?.q) {
+    query = query.or(`title.ilike.%${filters.q}%,description.ilike.%${filters.q}%`)
   }
 
   const { data, error } = await query.order("created_at", { ascending: false })

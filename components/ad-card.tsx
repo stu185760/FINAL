@@ -2,12 +2,15 @@ import Link from "next/link"
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { getCategories, getUser, type Ad } from "@/lib/local-db"
+import { getCategories } from "@/lib/local-db"
+import { type Ad } from "@/lib/supabase-db"
 import { formatDateTime } from "@/lib/utils"
 
 export function AdCard({ ad }: { ad: Ad }) {
   const cat = getCategories().find((c) => c.slug === ad.category)
-  const owner = ad.owner_id ? getUser(ad.owner_id) : undefined
+  // For now, we'll show "User" instead of fetching user details
+  // TODO: Implement user lookup from Supabase
+  const owner = { name: "User" }
 
   const cover = ad.images?.[0] || "/custom-project-preview.jpg"
 
@@ -56,7 +59,7 @@ export function AdCard({ ad }: { ad: Ad }) {
         </div>
 
         <div className="text-xs text-muted-foreground">
-          {owner?.name} • {formatDateTime(ad.created_at)}
+          {owner?.name} • {formatDateTime(new Date(ad.created_at).getTime())}
         </div>
 
         <Link href={`/ads/${ad.id}`} className="text-xs sm:text-sm underline underline-offset-4 hover:text-primary">
