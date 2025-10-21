@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAd, getCategories, getCurrentUser } from "@/lib/local-db"
+import { createAd as createLocalAd, addAdWithId, getCategories, getCurrentUser } from "@/lib/local-db"
 import { refreshAds } from "@/hooks/use-local"
+import { createAd as createRemoteAd } from "@/lib/supabase-db"
 import ImageUpload from "@/components/image-upload"
 import LocationSelect from "@/components/location-select"
 
@@ -180,11 +181,11 @@ export function PostAdWizard() {
                 Back
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   try {
                     const pf = priceFrom.trim() ? Number(priceFrom) : undefined
                     const pt = priceTo.trim() ? Number(priceTo) : undefined
-                    const ad = createAd({
+                    const payload = {
                       title,
                       description,
                       category: category!,
@@ -192,9 +193,32 @@ export function PostAdWizard() {
                       location,
                       price_from: isNaN(pf as any) ? undefined : pf,
                       price_to: isNaN(pt as any) ? undefined : pt,
-                    })
+                    }
+
+                    // Try Supabase (remote) first
+                    try {
+                      const created = await createRemoteAd(payload as any)
+                      // mirror into local demo store so the rest of the UI (which reads local) stays consistent
+                      addAdWithId({
+                        id: created.id as string,
+                        title: created.title,
+                        description: created.description,
+                        category: created.category,
+                        images: created.images ?? [],
+                        location: created.location,
+                        price_from: created.price_from ?? undefined,
+                        price_to: created.price_to ?? undefined,
+                      })
+                      refreshAds()
+                      router.push(`/ads/${created.id}`)
+                      return
+                    } catch (err) {
+                      // fall back to local demo store
+                    }
+
+                    const local = createLocalAd(payload)
                     refreshAds()
-                    router.push(`/ads/${ad.id}`)
+                    router.push(`/ads/${local.id}`)
                   } catch (e: any) {
                     alert(e?.message ?? "Failed to publish")
                   }

@@ -2,7 +2,8 @@
 create table if not exists public.classifieds (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
-  category text not null check (category in ('Clothing', 'Footwear', 'Furniture', 'Automobile', 'Jewelry', 'Gifting', 'Others')),
+  -- Use lowercase category slugs to match frontend values
+  category text not null check (category in ('clothing', 'footwear', 'furniture', 'automobile', 'jewelry', 'gifting', 'others')),
   title text not null,
   description text,
   location text not null,
