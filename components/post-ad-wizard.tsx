@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAd, getCategories, getCurrentUser } from "@/lib/local-db"
+import { createAd } from "@/lib/supabase-db"
+import { getCategories, getCurrentUser } from "@/lib/local-db"
 import { refreshAds } from "@/hooks/use-local"
 import ImageUpload from "@/components/image-upload"
 import LocationSelect from "@/components/location-select"
@@ -180,11 +181,11 @@ export function PostAdWizard() {
                 Back
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   try {
                     const pf = priceFrom.trim() ? Number(priceFrom) : undefined
                     const pt = priceTo.trim() ? Number(priceTo) : undefined
-                    const ad = createAd({
+                    const result = await createAd({
                       title,
                       description,
                       category: category!,
@@ -194,7 +195,13 @@ export function PostAdWizard() {
                       price_to: isNaN(pt as any) ? undefined : pt,
                     })
                     refreshAds()
-                    router.push(`/ads/${ad.id}`)
+                    // Get the created ad ID from the result
+                    const adId = result?.[0]?.id
+                    if (adId) {
+                      router.push(`/ads/${adId}`)
+                    } else {
+                      throw new Error("Failed to get ad ID from response")
+                    }
                   } catch (e: any) {
                     alert(e?.message ?? "Failed to publish")
                   }

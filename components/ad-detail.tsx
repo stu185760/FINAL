@@ -1,23 +1,41 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { getAd, getCategories, getUser, getCurrentUser, respondToAd, flagItem, deleteAd } from "@/lib/local-db"
+import { getAd, deleteAd } from "@/lib/supabase-db"
+import { getCategories, getCurrentUser, respondToAd, flagItem } from "@/lib/local-db"
 import { useCurrentUser } from "@/hooks/use-local"
 import { formatDateTime } from "@/lib/utils"
 
 export function AdDetail({ adId }: { adId: string }) {
-  const ad = useMemo(() => getAd(adId), [adId])
+  const [ad, setAd] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchAd() {
+      try {
+        const adData = await getAd(adId)
+        setAd(adData)
+      } catch (error) {
+        console.error("Error fetching ad:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAd()
+  }, [adId])
   const cat = ad ? getCategories().find((c) => c.slug === ad.category) : undefined
-  const owner = ad?.owner_id ? getUser(ad.owner_id) : undefined
+  // For now, we'll show "User" instead of fetching user details
+  const owner = { name: "User" }
   const { data: user } = useCurrentUser()
   const router = useRouter()
   const [message, setMessage] = useState("Hi! I can help with this. Here’s a brief proposal...")
 
+  if (loading) return <p className="text-muted-foreground">Loading...</p>
   if (!ad) return <p className="text-muted-foreground">Ad not found.</p>
 
   const canRespond = user?.role === "vendor" && ad.status === "open"
@@ -34,7 +52,7 @@ export function AdDetail({ adId }: { adId: string }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="text-sm text-muted-foreground">
-            Posted by {owner?.name} • {formatDateTime(ad.created_at)}
+            Posted by {owner?.name} • {formatDateTime(new Date(ad.created_at).getTime())}
           </div>
           {typeof ad.price_from !== "undefined" || typeof ad.price_to !== "undefined" ? (
             <div className="text-sm">
@@ -99,16 +117,16 @@ export function AdDetail({ adId }: { adId: string }) {
               Flag
             </Button>
           )}
-          {(user?.id === ad.owner_id || user?.role === "admin") && (
+          {(user?.id === ad.user_id || user?.role === "admin") && (
             <Button
               variant="destructive"
-              onClick={() => {
+              onClick={async () => {
                 if (!confirm("Are you sure you want to delete this ad? This cannot be undone.")) return
-                const ok = deleteAd(ad.id)
-                if (ok) {
+                try {
+                  await deleteAd(ad.id)
                   alert("Ad deleted.")
                   router.push("/ads")
-                } else {
+                } catch (error) {
                   alert("Failed to delete the ad.")
                 }
               }}
