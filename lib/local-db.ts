@@ -329,6 +329,37 @@ export function createAd(input: {
   return ad
 }
 
+// Allow mirroring a remotely-created ad (e.g., Supabase) into the local demo store
+export function addAdWithId(input: {
+  id: string
+  title: string
+  description: string
+  category: string
+  images: string[]
+  location?: string
+  price_from?: number
+  price_to?: number
+}) {
+  const db = loadDB()
+  const user = getCurrentUser()
+  const ad: Ad = {
+    id: input.id,
+    title: input.title,
+    description: input.description,
+    category: input.category,
+    images: input.images,
+    owner_id: user?.id ?? "u-cust",
+    status: "open",
+    created_at: Date.now(),
+    location: input.location,
+    price_from: input.price_from,
+    price_to: input.price_to,
+  }
+  db.ads.push(ad)
+  saveDB(db)
+  return ad
+}
+
 export function deleteAd(id: string) {
   const db = loadDB()
   const idx = db.ads.findIndex((a) => a.id === id)

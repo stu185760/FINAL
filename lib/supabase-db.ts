@@ -37,10 +37,14 @@ export async function createAd(ad: Omit<Ad, "id" | "created_at" | "updated_at">)
 
   if (!user) throw new Error("Not authenticated")
 
-  const { data, error } = await supabase.from("ads").insert({
-    ...ad,
-    user_id: user.id,
-  })
+  const { data, error } = await supabase
+    .from("ads")
+    .insert({
+      ...ad,
+      user_id: user.id,
+    })
+    .select("*")
+    .single()
 
   if (error) throw error
   return data
