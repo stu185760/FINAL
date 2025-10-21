@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { getAd, deleteAd } from "@/lib/supabase-db"
 import { getCategories, getUser, getCurrentUser, respondToAd, flagItem } from "@/lib/local-db"
 import { useCurrentUser } from "@/hooks/use-local"
-import { useSWR } from "swr"
+import useSWR from "swr"
 import { formatDateTime } from "@/lib/utils"
 
 export function AdDetail({ adId }: { adId: string }) {
