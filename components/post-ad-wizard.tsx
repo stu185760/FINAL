@@ -8,17 +8,27 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAd, getCategories, getCurrentUser } from "@/lib/local-db"
-import { refreshAds } from "@/hooks/use-local"
+import { createAd } from "@/lib/supabase-db"
+import { createClient } from "@/lib/supabase/client"
 import ImageUpload from "@/components/image-upload"
 import LocationSelect from "@/components/location-select"
 
 type Step = 1 | 2 | 3 | 4
 
+const categories = [
+  { id: "cat-1", name: "Clothing", slug: "Clothing" },
+  { id: "cat-2", name: "Footwear", slug: "Footwear" },
+  { id: "cat-3", name: "Furniture", slug: "Furniture" },
+  { id: "cat-4", name: "Automobile", slug: "Automobile" },
+  { id: "cat-5", name: "Jewelry", slug: "Jewelry" },
+  { id: "cat-6", name: "Gifting", slug: "Gifting" },
+  { id: "cat-7", name: "Others", slug: "Others" },
+]
+
 export function PostAdWizard() {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
-  const categories = getCategories()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -28,17 +38,6 @@ export function PostAdWizard() {
   const [priceTo, setPriceTo] = useState<string>("")
   const [uploads, setUploads] = useState<string[]>([])
   const images = uploads.slice(0, 8)
-
-  if (getCurrentUser()?.role !== "customer") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Post an Ad</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">Please switch to the Customer role to post.</CardContent>
-      </Card>
-    )
-  }
 
   return (
     <Card>
@@ -180,27 +179,35 @@ export function PostAdWizard() {
                 Back
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   try {
-                    const pf = priceFrom.trim() ? Number(priceFrom) : undefined
-                    const pt = priceTo.trim() ? Number(priceTo) : undefined
-                    const ad = createAd({
+                    setIsSubmitting(true)
+                    const pf = priceFrom.trim() ? Number(priceFrom) : null
+                    const pt = priceTo.trim() ? Number(priceTo) : null
+                    
+                    await createAd({
                       title,
                       description,
                       category: category!,
                       images,
                       location,
-                      price_from: isNaN(pf as any) ? undefined : pf,
-                      price_to: isNaN(pt as any) ? undefined : pt,
+                      price_from: isNaN(pf as any) ? null : pf,
+                      price_to: isNaN(pt as any) ? null : pt,
                     })
-                    refreshAds()
-                    router.push(`/ads/${ad.id}`)
+                    
+                    // Redirect to ads list after successful creation
+                    router.push(`/ads`)
+                    router.refresh()
                   } catch (e: any) {
-                    alert(e?.message ?? "Failed to publish")
+                    alert(e?.message ?? "Failed to publish ad. Please make sure you are logged in.")
+                    console.error("Error creating ad:", e)
+                  } finally {
+                    setIsSubmitting(false)
                   }
                 }}
+                disabled={isSubmitting}
               >
-                Publish
+                {isSubmitting ? "Publishing..." : "Publish"}
               </Button>
             </div>
           </div>
